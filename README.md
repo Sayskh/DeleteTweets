@@ -2,89 +2,144 @@
 
 It should work just fine, I regularly use the script myself, but if anything wrong happens I am not taking any responsibility. Do not use this script if the 0.1% possible failure scares you.
 
+This script is a fork and modification of Lyfhael's Original "DeleteTweets" (Found at https://github.com/Lyfhael/DeleteTweets). It has been updated to work with current X.com API changes. 
+
+This entire code is provided "AS IS" and I take absolutely no responsibility and no warranty is given. The code is based on the original work by Lyfhael and community contributions.
+
 # Prerequisites
 
-I use Google Chrome. I don't know if it will work elsewhere. It probably will, but if it doesn't, just try on Chrome.
+This will ONLY work in Google Chrome at a Desktop Computer (Tested on Windows and Linux)
+The script WON'T work in any kind of Firefox-Browser!!!
 
 # Tutorial
 
-(if you can't find  the uuid, put any value it'll work)
+(if you can't find the transaction id, put any value it'll work)
 
 ##  Video Tutorial
 https://github.com/teisseire117/DeleteTweets/assets/43145883/249584c3-ce01-424b-8ce5-751e976c8df0
 
-
-
 ## Text Tutorial
 
-- Go to https://twitter.com/
-- Open the DevTools by pressing CTRL + SHIFT + I
+**FIRST** You should copy the entire raw content of the main.js into a text editor of your choice. Don't directly paste it into the console as it will be hard to edit the Options correctly!
+
+- Go to https://x.com/
+- Open the DevTools by pressing CTRL + SHIFT + I or F12
 - Click on Network tab in the DevTools console
   - If requests are not being recorded, press CTRL + E and wait 5 seconds
 - You should now have something like this : ![ULXBFrT](https://github.com/teisseire117/DeleteTweets/assets/43145883/f784c575-efbb-42a2-a217-4700ba715b7e)
 - Click on Fetch/XHR : ![KtZYL0L](https://github.com/teisseire117/DeleteTweets/assets/43145883/f0cdb3e8-f9ee-4ce3-ac39-c0a463c00bf6)
-- Now click on any request in the results, and look for the authorization/X-Client-Transaction-Id/X-Client-Uuid values, as in screenshot: ![pxN8nth](https://github.com/teisseire117/DeleteTweets/assets/43145883/8f6b0123-2f51-41da-a234-255c5bbb5589)
-- Now replace the values in the .js from this repository of the according variables, by the values of the three variables you found, here is an example of how it should look in the end : ![E0M6Bf9](https://github.com/teisseire117/DeleteTweets/assets/43145883/bac5806b-9c76-4018-b2c0-55fb9080e715)
+- **Now go to your X Profile and click on your "Replies" tab**
+- Now click on the request which name starts with `UserTweetsAndReplies`, and look for the **authorization** and **X-Client-Transaction-Id** values
+- **Important**: You also need to get your X.com username (without the @ symbol)
+- Now replace the values in the .js file:
+  - Replace `***` in `authorization` with your Bearer token (usually starts with many A's)
+  - Replace `***` in `client_tid` with your X-Client-Transaction-Id value
+  - Replace `***` in `username` with your X.com username (WITHOUT the @ symbol!)
+- **(Ignore the X-Client-UUID Values in any screenshots you see in this tutorial, this value has been removed! Don't add it!)**
+- Here is an example of how it should look: ![E0M6Bf9](https://github.com/teisseire117/DeleteTweets/assets/43145883/bac5806b-9c76-4018-b2c0-55fb9080e715)
+
+## If you encounter 403/404 errors
+Before opening an Issue, try to change the "random_resource" variable in the script.
+
+When you look into the "UserTweetsAndReplies" request, you should see that massive request URL right at the top:
+<img width="821" height="63" alt="image" src="https://github.com/user-attachments/assets/b25a10fc-2c51-4d99-89c9-8e3c90eeb154" />
+
+In this Request URL there is that part after "graphql" between two Slashes. Copy only the Part between the Slashes (As highlighted in the image, in this Example it would be WJdO9AzTVxm7lmjLgreeEA) and set it into the "random_resource" variable in your script.
+<img width="375" height="50" alt="image" src="https://github.com/user-attachments/assets/9c4b6d5f-47a3-4870-87cd-82f17dbe7d0a" />
+
+Now it should work!
+
+**Note**: With the new Rate Limits and X's handling of these, it is normal to encounter multiple 404 errors during deletion. That's completely normal. You only need to open an Issue or change the "random_resource" variable when it doesn't even start, even after a minute of trying!
 
 ## Filtering / Options
-- You can now choose to delete only tweets that are within a specific date range. For this, edit "before_date" and "after_date" in the `delete_options` variable. These will look like that :
-```
-	"after_date":new Date('1900-01-01'), // year-month-day
-	"before_date":new Date('2100-01-01') // year-month-day
-```
-Say you want to delete tweets that happened on July 3rd 2023. You would set the date to that :
-```
-	"after_date":new Date('2023-07-02'), // year-month-day
-	"before_date":new Date('2023-07-04') // year-month-day
-```
-It means : Delete tweet AFTER July 2nd 2023, and BEFORE July 4th 2023. These two dates are not included, so it's only what's in-between these dates, and what's before 2nd and 4th, you got it, 3rd.
-NOTE: This is not optimized at all. Meaning the script will go through ALL of your tweets no matter what date you gave. It will only delete tweets that are in the date range you gave, but it will go through all tweets. I will try to optimize it later.
 
-- You can filter which tweets to delete by editing the `delete_options` variable. For now you can decide to remove tweet that contain a certain keyword. For example if you want to delete tweets that contain the word "Hi" or "Hello"(case sensitive), change the variable to look like that :
+You can customize which tweets to delete by editing the `delete_options` variable:
+
+### Date Range Filtering
+- You can delete only tweets within a specific date range using `after_date` and `before_date`:
+```javascript
+"after_date": new Date('1900-01-01'), // year-month-day
+"before_date": new Date('2100-01-01') // year-month-day
 ```
-var delete_options = {
-	"delete_message_with_url_only":false,
-	"match_any_keywords":["Hi", "Hello"]
-}
+
+Example - to delete tweets from July 3rd, 2023:
+```javascript
+"after_date": new Date('2023-07-02'), // year-month-day
+"before_date": new Date('2023-07-04') // year-month-day
 ```
-- You can also choose to remove tweets only if they contain a link in them. Just change `delete_message_with_url_only` to `true`. You can combine this option with the keywords option.
-- Edit 25/08/2023, you can now add tweet ids that you want to keep, so they won't get removed. It's the "tweets_to_ignore" property in the delete_options variable. Just add the tweet id in the array
-- Edit 29/08/2023, you can now choose to also unretweet or not, by changing the "unretweet" property in the delete_options variable. Set it to true if you want to unretweet. It combines with the other filters.
-- Edit 10/09/2023, IF the script removed some tweets but not all, AND that there were no error thrown, then you can set the option "old_tweets":false to true in the delete_options object. Then launch the script again, and it should delete these older tweets.
-- Edit 06/10/2023, new delete_options : do_not_remove_pinned_tweet, it is set to true by default so you don't remove your pinned tweet by mistake.
-- Edit 07/10/2023, added "delete_specific_ids_only" option. Override the default tweet search, and only remove tweets from their IDs that you have put in this option(it's an array)
-- Edit 07/12/2023, added from_archive option. It's WAY faster, no rate-limit, and it's more complete. Download your archive from Twitter then enable from_archive by setting it to true in the script, then you'll see a box asking you to drag your tweets.js file in it.
+**Note**: The script will go through ALL tweets but only delete those within your date range.
 
-Now copy/paste the script in the console, press Enter, and wait for the deletion to complete. It should write "DELETION COMPLETE" in the console when it's over.
-When it's over, launch the script a second time, there sometime are a few leftovers.
+### Keyword Filtering
+- Delete tweets containing specific keywords:
+```javascript
+"match_any_keywords": ["Hi", "Hello"] // Case sensitive
+```
 
-# Support
+### Other Options
+- `"unretweet": true` - Set to `true` to unretweet all your retweets, `false` to keep them
+- `"delete_message_with_url_only": false` - Set to `true` to only delete tweets containing links
+- `"do_not_remove_pinned_tweet": true` - Protects your pinned tweet from deletion
+- `"tweets_to_ignore": [""]` - Add tweet IDs here to protect specific tweets from deletion
+- `"delete_specific_ids_only": [""]` - Overrides default tweet search and only deletes tweets with specific IDs listed here (example: `["1111111111","22222222222","3333333333"]`). If empty (default), this option is ignored. If there's even a single ID here, all other options are ignored!
+- `"from_archive": false` - Import tweets from X Archive for WAY faster deletion with no rate-limit (UNTESTED! Might not work!)
+- `"old_tweets": false` - For older tweets that might not delete on first run (Probably doesn't work as of May 2025, bug reports appreciated!)
 
-I allow tickets in French 🇫🇷 but prefer English if you can speak it, so everyone can understand.
-
+### Usage Instructions
+1. Copy the entire script content to a text editor first
+2. Edit the configuration options as needed
+3. Copy/paste the modified script into the browser console
+4. Press Enter and wait for deletion to complete
+5. The script will show "✅ DELETE COMPLETE!" when finished
+6. **Run the script a second time** - there are sometimes leftovers (should only take seconds the second time)
 
 # FAQ
 
-## Do I need to include the Bearer part of the authorization key ?
-Yes
+## Do I need to include the Bearer part of the authorization key?
+Yes, but it's prefilled for you. Just replace the *** with your actual token.
 
-## I can't find X-Client-Transaction-Id/X-Client-Uuid/authorization
-In the request list, search for requests named `client_event.json`, they are the more frequent ones, and they always contain the tokens you need
+## I can't find X-Client-Transaction-Id/authorization or get Error 400/403
+In the request list, make sure you select a Request that starts with `UserTweetsAndReplies?v`...
+You get such a request only when you are on your own profile and select the "Replies" Tab.
+
+## What if I can't find my username?
+Your username is what appears after x.com/ in your profile URL (without the @ symbol).
+
+## The script says "Failed to fetch data"
+This usually means:
+- Your authorization token expired - get a new one
+- X.com changed their API - try updating the "random_resource" variable
+- You're being rate-limited - wait and try again
 
 ## Uncaught TypeError: entries is not iterable
+If you have this error, please open an Issue so the script can be updated with new Query Endpoints.
 
-If you have this error, in the script edit the random_resource variable from
-`var random_resource = "uYU5M2i12UhDvDTzN6hZPg";`
-to
-`var random_resource = "Q6aAvPw7azXZbqXzuqTALA";`
+## Script encounters multiple 404 errors during deletion
+This is normal with X's current rate limiting. The script will continue working. Only worry if it doesn't start at all after a minute of trying.
 
-Then go to the fetch_tweets() function and change the feature variable to:
-```
-var feature = `&features=%7B%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22tweetypie_unmention_optimization_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Afalse%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_media_download_video_enabled%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D"`
-```
+## Script seems stuck or running slowly
+This is normal - the script processes tweets in batches and includes delays to avoid rate limiting. Be patient and let it complete.
 
-And it should work :) Also I updated the script on 5/09/2023 so if you got the script before that date, it's most likely outdated and you need to get the new one.
+## Some tweets weren't deleted
+1. Run the script a second time - there are often leftovers
+2. Check if those tweets match your filtering criteria
+3. Some very old tweets might require the `"old_tweets": true` option
+
+# Updates in This Fork
+
+- Updated API endpoints for current X.com structure (as of August 2025)
+- Improved error handling and logging
+- Updated GraphQL query IDs
+- Enhanced tweet detection algorithm
+- Streamlined configuration (removed X-Client-Uuid requirement)
+- Added username-based user identification
+- Improved batch processing and rate limit handling
+
+# Credits
+
+Original Repository: https://github.com/Lyfhael/DeleteTweets
+Additional improvements inspired by: https://github.com/NietzscheKadse/XeetEntfernierer
 
 # Other
 
-https://ko-fi.com/lolarchiver# if you feel like it :D
+Donation link for the original creator:
+https://ko-fi.com/lolarchiver#
