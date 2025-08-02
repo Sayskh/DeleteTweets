@@ -66,7 +66,7 @@ async function fetch_tweets(cursor) {
     });
 
     if (!response.ok) {
-        console.error(`Failed to get data, status: ${response.status}`);
+        console.error(`Failed to fetch data, status: ${response.status}`);
         console.error(await response.text());
         return null;
     }
