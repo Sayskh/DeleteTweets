@@ -5,7 +5,7 @@ var username = "***"; // Replace 'Username' with your X.com Username (But WITHOU
 // ================= DELETE OPTION / FILTER =================
 var delete_options = {
     "unretweet": true, // "true" Unretweets all your Retweets (maybe not delete the private account), "false" Keeps all your retweets on your profile and won't unretweet/delete them.
-    "do_not_remove_pinned_tweet": true, // This option is so that you won't accidentally delete your pinned tweet. If you DO want to delete it, set this option to "false".
+    "do_not_remove_pinned_tweet": false, // This option is so that you won't accidentally delete your pinned tweet. If you DO want to delete it, set this option to "false".
     "after_date": new Date('1900-01-01'), // Only deletes Tweets AFTER/BEFORE the set date (excluding it).
     "before_date": new Date('2100-01-01'), // CAUTION: Sometimes it uses your Timezone and sometimes it uses GMT. So better give a day of buffer and delete the rest yourself, if you don't want to risk losing any Tweets outside the date range.
     "from_archive": false, // Do you want to import the Tweets from an X Archive? (UNTESTED! Might not work!).
@@ -32,7 +32,7 @@ const getUserId = () => {
     if (twid_match && twid_match[1]) return twid_match[1];
     const auth_token_match = document.cookie.match(/auth_token=([0-9]+)-/);
     if (auth_token_match && auth_token_match[1]) return auth_token_match[1];
-    throw new Error("Failed to get the ‘user_id’ from the cookie. Make sure you are logged in.");
+    throw new Error("Failed to get the 'user_id' from the cookie. Make sure you are logged in.");
 };
 var user_id = getUserId();
 
@@ -103,8 +103,34 @@ function check_date(tweet) {
 
 function check_filter(tweet) {
     if (!tweet?.legacy?.id_str || (delete_options["tweets_to_ignore"]?.includes(tweet.legacy.id_str))) return false;
+    
     if (tweet?.legacy?.retweeted_status_result && !delete_options.unretweet) return false;
-    return check_date(tweet);
+    
+    if (!check_date(tweet)) return false;
+    
+    if (delete_options["delete_specific_ids_only"] && delete_options["delete_specific_ids_only"].length > 0 && delete_options["delete_specific_ids_only"][0] !== "") {
+        if (!delete_options["delete_specific_ids_only"].includes(tweet.legacy.id_str)) {
+            return false;
+        }
+    }
+    
+    if (delete_options["delete_message_with_url_only"]) {
+        const tweet_text = tweet?.legacy?.full_text || "";
+        const has_url = /https?:\/\/[^\s]+/.test(tweet_text) || 
+                       tweet?.legacy?.entities?.urls?.length > 0 ||
+                       tweet?.legacy?.entities?.media?.length > 0;
+        if (!has_url) return false;
+    }
+    
+    if (delete_options["match_any_keywords"] && delete_options["match_any_keywords"].length > 0 && delete_options["match_any_keywords"][0] !== "") {
+        const tweet_text = (tweet?.legacy?.full_text || "").toLowerCase();
+        const has_keyword = delete_options["match_any_keywords"].some(keyword => 
+            keyword && tweet_text.includes(keyword.toLowerCase())
+        );
+        if (!has_keyword) return false;
+    }
+    
+    return true;
 }
 
 function findTweetIds(obj) {
@@ -126,7 +152,6 @@ function findTweetIds(obj) {
 }
 
 async function delete_tweets(id_list) {
-    // ID BARU - Diperbarui Juli 2025
     const deleteQueryId = "VaenaVgh5q5ih7kvyVjgtg";
     let id_list_size = id_list.length;
     for (let i = 0; i < id_list_size; ++i) {
@@ -148,6 +173,16 @@ async function delete_tweets(id_list) {
 
 async function run() {
     console.log("🚀 Starting...");
+    console.log("📋 Active filters:");
+    console.log(`- Unretweet: ${delete_options.unretweet}`);
+    console.log(`- Keep pinned tweet: ${delete_options.do_not_remove_pinned_tweet}`);
+    console.log(`- After date: ${delete_options.after_date.toDateString()}`);
+    console.log(`- Before date: ${delete_options.before_date.toDateString()}`);
+    if (delete_options.delete_message_with_url_only) console.log(`- URL only: ${delete_options.delete_message_with_url_only}`);
+    if (delete_options.delete_specific_ids_only && delete_options.delete_specific_ids_only[0] !== "") console.log(`- Specific IDs: ${delete_options.delete_specific_ids_only.length} IDs`);
+    if (delete_options.match_any_keywords && delete_options.match_any_keywords[0] !== "") console.log(`- Keywords: ${delete_options.match_any_keywords.join(', ')}`);
+    if (delete_options.tweets_to_ignore && delete_options.tweets_to_ignore[0] !== "") console.log(`- Ignored tweets: ${delete_options.tweets_to_ignore.length} IDs`);
+    
     await sleep(2000);
     let next = null;
     while (next !== "finished" && !stop_signal) {
